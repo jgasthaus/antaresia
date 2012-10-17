@@ -1,0 +1,1 @@
+from filecollection import FileCollection

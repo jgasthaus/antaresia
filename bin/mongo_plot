@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import pymongo
+import matplotlib.pyplot as plt
+import sys
+import argparse
+from time import sleep
+from antaresia import mongoplot
+
+
+DEFAULT_HOST = "skinner"
+DEFAULT_PORT = 27018
+DEFAULT_DB = "experiments"
+DEFAULT_COLLECTION = "test"
+
+
+parser = argparse.ArgumentParser(description='Plot documents from MongoDB')
+parser.add_argument('--port', metavar='PORT', type=int, default=DEFAULT_PORT,
+    help='MongoDB port')
+parser.add_argument('--collection', dest='collection', 
+    type=str, action='store',
+    default=DEFAULT_COLLECTION,
+    help='MongoDB collection')
+parser.add_argument('--host', dest='host', 
+    type=str, action='store',
+    default=DEFAULT_HOST,
+    help='MongoDB host')
+parser.add_argument('--db', dest='db', 
+    type=str, action='store',
+    default=DEFAULT_DB,
+    help='MongoDB database')
+parser.add_argument('--query', dest='query', 
+    type=str, action='store',
+    default="{}",
+    help='query document')
+parser.add_argument('--x', dest='x_col', 
+    type=str, action='store',
+    default="x",
+    help='x column')
+parser.add_argument('--y', dest='y_col', 
+    type=str, action='store',
+    default="y",
+    help='y column')
+parser.add_argument('--title', dest='title', 
+    type=str, action='store',
+    default="",
+    help='Title for plot')
+parser.add_argument('--type', dest='type', 
+    type=str, action='store',
+    default="line",
+    help='plot type')
+parser.add_argument('--custom-code', dest='custom_plot_code', 
+    type=str, action='store',
+    default="pass",
+    help='Python code to execute after plotting each doc (for axes, grids, etc.)')
+parser.add_argument('--custom-code-doc', dest='custom_plot_code_doc', 
+    type=str, action='store',
+    default="pass",
+    help="Python code to execute for each doc in a custom plot; name 'doc' refers to the current document, 'ax' to the drawing axes")
+parser.add_argument('--refresh', dest='refresh', 
+    type=int, action='store',
+    default=0,
+    help='refresh interval (0=no refresh)')
+
+args = parser.parse_args()
+args.query = eval(args.query)
+# make sure the columns we need exist
+args.query[args.x_col] = {"$exists": True}
+args.query[args.y_col] = {"$exists": True}
+args.type = eval("mongoplot." + args.type + "Plot")
+
+
+if not isinstance(args.query, dict):
+  args.query = {}
+
+coll = pymongo.Connection(args.host, args.port)[args.db][args.collection]
+docs = coll.find(args.query)
+
+print "Query: ", args.query
+print "Found %d matching documents." % (docs.count(), )
+
+fig = plt.figure()
+
+if args.refresh != 0:
+  plt.ion()
+  while True:
+    args.type(fig, docs, args)
+    fig.canvas.draw()
+    plt.show()
+    sys.stdout.write(".")
+    sys.stdout.flush()
+    sleep(args.refresh)
+    fig.clear()
+    docs = coll.find(args.query)
+else:
+  args.type(fig, docs, args)
+  plt.show()
+
+
