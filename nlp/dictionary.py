@@ -38,7 +38,6 @@ class Dictionary():
   def prune(self, min_freq):
     """Prune dictionary to only contain types
     that occur more than min_freq times."""
-    pass
     new_forward = {}
     new_backward = ["OOV"]
     new_freq = [0]

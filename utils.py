@@ -22,3 +22,18 @@ def getterWithDefault(D, defaultKey, defaultValue = None):
   #                   or defaultValue 
   #                   or (defaultKey in D and D[defaultKey]) 
   #                   or None )
+
+def getCommitInfo():
+  import os, subprocess
+  """Get latest commit info for the current directory"""
+  GIT_CMD = "git rev-parse HEAD"
+  BZR_COMMAND = "bzr version-info"
+  try:
+    git_result = subprocess.check_call(GIT_CMD, stderr=None, shell=True)
+    return git_result
+  except:
+    pass
+  #git_result = os.popen(GIT_CMD).read()
+  bzr_result = os.popen(BZR_COMMAND).read()
+  if bzr_result[:10] != "bzr: ERROR":
+    return bzr_result

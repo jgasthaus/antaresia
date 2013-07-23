@@ -1,8 +1,8 @@
-#!/bin/env python
+#!/usr/bin/env python
 import re
 import sys
 
-wordsRegex = re.compile(r"[A-Za-z]+(?:[-'@_.][A-Za-z]+)*")
+wordsRegex = re.compile(r"[A-Za-z0-9]+(?:[-@_.][A-Za-z0-9]+?)*|'[a-z]+|[\"'.,;:()]")
 
 def lex(regex, instring):
   return  regex.findall(instring)

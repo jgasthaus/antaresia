@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+import pymongo
+import sys
+import argparse
+from time import sleep
+
+
+DEFAULT_HOST = "skinner"
+DEFAULT_PORT = 27018
+DEFAULT_DB = "experiments"
+DEFAULT_COLLECTION = "test"
+
+
+parser = argparse.ArgumentParser(description='Plot documents from MongoDB')
+parser.add_argument('--port', metavar='PORT', type=int, default=DEFAULT_PORT,
+    help='MongoDB port')
+parser.add_argument('--collection', dest='collection',
+    type=str, action='store',
+    default=DEFAULT_COLLECTION,
+    help='MongoDB collection')
+parser.add_argument('--host', dest='host',
+    type=str, action='store',
+    default=DEFAULT_HOST,
+    help='MongoDB host')
+parser.add_argument('--db', dest='db',
+    type=str, action='store',
+    default=DEFAULT_DB,
+    help='MongoDB database')
+parser.add_argument('--query', dest='query',
+    type=str, action='store',
+    default="{}",
+    help='query document')
+parser.add_argument('--columns', dest='columns',
+    type=str, action='store',
+    default="",
+    help='display columns')
+parser.add_argument('--list', dest='list_collections',
+    action='store_true',
+    help='list collections')
+
+args = parser.parse_args()
+args.query = eval(args.query)
+# make sure the columns we need exist
+
+if not isinstance(args.query, dict):
+  args.query = {}
+
+print "Host: %s:%d" % (args.host,args.port)
+print "Db: %s" % (args.db,)
+conn = pymongo.Connection(args.host, args.port)[args.db]
+if args.list_collections:
+    print "Avaliable collections:"
+    for n in conn.collection_names():
+        print n
+    sys.exit(0)
+coll = conn[args.collection]
+docs = coll.find(args.query)
+
+print "Host: %s" % (args.host,)
+print "Db: %s" % (args.db,)
+print "Collection: %s" % (args.collection,)
+
+print "Query: ", args.query
+print "Found %d matching documents." % (docs.count(), )
+
+if  args.columns != "":
+  columns = [s.strip() for s in args.columns.split(',')]
+  print '\t'.join(columns)
+  print "-"*80
+  for d in docs:
+    out = []
+    for c in columns:
+      if c in d:
+        out.append(str(d[c]))
+      else:
+        out.append('N/A')
+    print '\t'.join(out)
+else:
+  for d in docs:
+    print d
